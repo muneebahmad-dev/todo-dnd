@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-
-// DnD
 import {
   DndContext,
   DragEndEvent,
@@ -20,17 +18,12 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-
-import { Inter } from 'next/font/google';
-
-// Components
 import Container from '@/components/Container';
 import Items from '@/components/Item';
 import Modal from '@/components/Modal';
 import Input from '@/components/Input';
 import { Button } from '@/components/Button';
 
-const inter = Inter({ subsets: ['latin'] });
 
 type DNDType = {
   id: UniqueIdentifier;
@@ -42,29 +35,37 @@ type DNDType = {
 };
 
 export default function Home() {
-  const [containers, setContainers] = useState<DNDType[]>([]);
+  const [containers, setContainers] = useState<DNDType[]>([
+    {
+      id: `container-1`,
+      title: 'Todo',
+      items: [
+        { id: `item-1`, title: 'Set up project environment' },
+        { id: `item-2`, title: 'Research feature requirements' },
+      ],
+    },
+    {
+      id: `container-2`,
+      title: 'In Progress',
+      items: [
+        { id: `item-3`, title: 'Develop main feature' },
+        { id: `item-4`, title: 'Write unit tests' },
+        { id: `item-5`, title: 'Initial project setup' },
+      ],
+    },
+    {
+      id: `container-3`,
+      title: 'Done',
+      items: [
+        { id: `item-6`, title: 'Feature proposal approval' },
+      ],
+    },
+  ]);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [currentContainerId, setCurrentContainerId] =
     useState<UniqueIdentifier>();
-  const [containerName, setContainerName] = useState('');
   const [itemName, setItemName] = useState('');
-  const [showAddContainerModal, setShowAddContainerModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
-
-  const onAddContainer = () => {
-    if (!containerName) return;
-    const id = `container-${uuidv4()}`;
-    setContainers([
-      ...containers,
-      {
-        id,
-        title: containerName,
-        items: [],
-      },
-    ]);
-    setContainerName('');
-    setShowAddContainerModal(false);
-  };
 
   const onAddItem = () => {
     if (!itemName) return;
@@ -80,7 +81,6 @@ export default function Home() {
     setShowAddItemModal(false);
   };
 
-  // Find the value of the items
   function findValueOfItems(id: UniqueIdentifier | undefined, type: string) {
     if (type === 'container') {
       return containers.find((item) => item.id === id);
@@ -112,7 +112,6 @@ export default function Home() {
     return container.items;
   };
 
-  // DND Handlers
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -129,7 +128,6 @@ export default function Home() {
   const handleDragMove = (event: DragMoveEvent) => {
     const { active, over } = event;
 
-    // Handle Items Sorting
     if (
       active.id.toString().includes('item') &&
       over?.id.toString().includes('item') &&
@@ -137,14 +135,11 @@ export default function Home() {
       over &&
       active.id !== over.id
     ) {
-      // Find the active container and over container
       const activeContainer = findValueOfItems(active.id, 'item');
       const overContainer = findValueOfItems(over.id, 'item');
 
-      // If the active or over container is not found, return
       if (!activeContainer || !overContainer) return;
 
-      // Find the index of the active and over container
       const activeContainerIndex = containers.findIndex(
         (container) => container.id === activeContainer.id,
       );
@@ -152,14 +147,12 @@ export default function Home() {
         (container) => container.id === overContainer.id,
       );
 
-      // Find the index of the active and over item
       const activeitemIndex = activeContainer.items.findIndex(
         (item) => item.id === active.id,
       );
       const overitemIndex = overContainer.items.findIndex(
         (item) => item.id === over.id,
       );
-      // In the same container
       if (activeContainerIndex === overContainerIndex) {
         let newItems = [...containers];
         newItems[activeContainerIndex].items = arrayMove(
@@ -170,7 +163,6 @@ export default function Home() {
 
         setContainers(newItems);
       } else {
-        // In different containers
         let newItems = [...containers];
         const [removeditem] = newItems[activeContainerIndex].items.splice(
           activeitemIndex,
@@ -185,7 +177,6 @@ export default function Home() {
       }
     }
 
-    // Handling Item Drop Into a Container
     if (
       active.id.toString().includes('item') &&
       over?.id.toString().includes('container') &&
@@ -193,14 +184,11 @@ export default function Home() {
       over &&
       active.id !== over.id
     ) {
-      // Find the active and over container
       const activeContainer = findValueOfItems(active.id, 'item');
       const overContainer = findValueOfItems(over.id, 'container');
 
-      // If the active or over container is not found, return
       if (!activeContainer || !overContainer) return;
 
-      // Find the index of the active and over container
       const activeContainerIndex = containers.findIndex(
         (container) => container.id === activeContainer.id,
       );
@@ -208,12 +196,10 @@ export default function Home() {
         (container) => container.id === overContainer.id,
       );
 
-      // Find the index of the active and over item
       const activeitemIndex = activeContainer.items.findIndex(
         (item) => item.id === active.id,
       );
 
-      // Remove the active item from the active container and add it to the over container
       let newItems = [...containers];
       const [removeditem] = newItems[activeContainerIndex].items.splice(
         activeitemIndex,
@@ -224,11 +210,9 @@ export default function Home() {
     }
   };
 
-  // This is the function that handles the sorting of the containers and items when the user is done dragging.
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    // Handling Container Sorting
     if (
       active.id.toString().includes('container') &&
       over?.id.toString().includes('container') &&
@@ -236,20 +220,17 @@ export default function Home() {
       over &&
       active.id !== over.id
     ) {
-      // Find the index of the active and over container
       const activeContainerIndex = containers.findIndex(
         (container) => container.id === active.id,
       );
       const overContainerIndex = containers.findIndex(
         (container) => container.id === over.id,
       );
-      // Swap the active and over container
       let newItems = [...containers];
       newItems = arrayMove(newItems, activeContainerIndex, overContainerIndex);
       setContainers(newItems);
     }
 
-    // Handling item Sorting
     if (
       active.id.toString().includes('item') &&
       over?.id.toString().includes('item') &&
@@ -257,20 +238,16 @@ export default function Home() {
       over &&
       active.id !== over.id
     ) {
-      // Find the active and over container
       const activeContainer = findValueOfItems(active.id, 'item');
       const overContainer = findValueOfItems(over.id, 'item');
 
-      // If the active or over container is not found, return
       if (!activeContainer || !overContainer) return;
-      // Find the index of the active and over container
       const activeContainerIndex = containers.findIndex(
         (container) => container.id === activeContainer.id,
       );
       const overContainerIndex = containers.findIndex(
         (container) => container.id === overContainer.id,
       );
-      // Find the index of the active and over item
       const activeitemIndex = activeContainer.items.findIndex(
         (item) => item.id === active.id,
       );
@@ -278,7 +255,6 @@ export default function Home() {
         (item) => item.id === over.id,
       );
 
-      // In the same container
       if (activeContainerIndex === overContainerIndex) {
         let newItems = [...containers];
         newItems[activeContainerIndex].items = arrayMove(
@@ -288,7 +264,6 @@ export default function Home() {
         );
         setContainers(newItems);
       } else {
-        // In different containers
         let newItems = [...containers];
         const [removeditem] = newItems[activeContainerIndex].items.splice(
           activeitemIndex,
@@ -302,7 +277,6 @@ export default function Home() {
         setContainers(newItems);
       }
     }
-    // Handling item dropping into Container
     if (
       active.id.toString().includes('item') &&
       over?.id.toString().includes('container') &&
@@ -310,20 +284,16 @@ export default function Home() {
       over &&
       active.id !== over.id
     ) {
-      // Find the active and over container
       const activeContainer = findValueOfItems(active.id, 'item');
       const overContainer = findValueOfItems(over.id, 'container');
 
-      // If the active or over container is not found, return
       if (!activeContainer || !overContainer) return;
-      // Find the index of the active and over container
       const activeContainerIndex = containers.findIndex(
         (container) => container.id === activeContainer.id,
       );
       const overContainerIndex = containers.findIndex(
         (container) => container.id === overContainer.id,
       );
-      // Find the index of the active and over item
       const activeitemIndex = activeContainer.items.findIndex(
         (item) => item.id === active.id,
       );
@@ -341,24 +311,6 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-7xl py-10">
-      {/* Add Container Modal */}
-      <Modal
-        showModal={showAddContainerModal}
-        setShowModal={setShowAddContainerModal}
-      >
-        <div className="flex flex-col w-full items-start gap-y-4">
-          <h1 className="text-gray-800 text-3xl font-bold">Add Container</h1>
-          <Input
-            type="text"
-            placeholder="Container Title"
-            name="containername"
-            value={containerName}
-            onChange={(e) => setContainerName(e.target.value)}
-          />
-          <Button onClick={onAddContainer}>Add container</Button>
-        </div>
-      </Modal>
-      {/* Add Item Modal */}
       <Modal showModal={showAddItemModal} setShowModal={setShowAddItemModal}>
         <div className="flex flex-col w-full items-start gap-y-4">
           <h1 className="text-gray-800 text-3xl font-bold">Add Item</h1>
@@ -373,10 +325,8 @@ export default function Home() {
         </div>
       </Modal>
       <div className="flex items-center justify-between gap-y-2">
-        <h1 className="text-gray-800 text-3xl font-bold">Dnd-kit Guide</h1>
-        <Button onClick={() => setShowAddContainerModal(true)}>
-          Add Container
-        </Button>
+        <h1 className="text-gray-800 text-3xl font-bold">Todo App</h1>
+       
       </div>
       <div className="mt-10">
         <div className="grid grid-cols-3 gap-6">
@@ -409,11 +359,9 @@ export default function Home() {
               ))}
             </SortableContext>
             <DragOverlay adjustScale={false}>
-              {/* Drag Overlay For item Item */}
               {activeId && activeId.toString().includes('item') && (
                 <Items id={activeId} title={findItemTitle(activeId)} />
               )}
-              {/* Drag Overlay For Container */}
               {activeId && activeId.toString().includes('container') && (
                 <Container id={activeId} title={findContainerTitle(activeId)}>
                   {findContainerItems(activeId).map((i) => (
